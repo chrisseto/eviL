@@ -1,0 +1,4 @@
+dist/
+.cache/
+assets/node_modules
+weather
