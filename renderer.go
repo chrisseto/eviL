@@ -6,6 +6,8 @@ import (
 	"io"
 	"math/rand"
 	"strings"
+
+	"github.com/chrisseto/evil/channel"
 )
 
 func ID() string {
@@ -23,13 +25,14 @@ func ID() string {
 }
 
 type Renderer struct {
-	pages      *template.Template
-	views      *template.Template
-	components *template.Template
-	_views     map[string]View
+	SessionFactory *SessionFactory
+	pages          *template.Template
+	views          *template.Template
+	components     *template.Template
+	_views         map[string]View
 }
 
-func NewRenderer2(
+func NewRenderer(
 	pagesGlob string,
 	viewsGlob string,
 	componentGlob string,
@@ -67,13 +70,19 @@ func (r *Renderer) RegisterView(name string, view View) error {
 	return nil
 }
 
-func (r *Renderer) RenderPage(wr io.Writer, page string, s *Session) error {
+func (r *Renderer) RenderPage(wr io.Writer, page string) error {
 	t := template.Must(template.Must(r.pages.Clone()).AddParseTree("", r.components.Tree))
 
 	t.Funcs(template.FuncMap{
 		"EvilView": func(name string, data interface{}) (template.HTML, error) {
 			var b strings.Builder
 
+			s, err := r.SessionFactory.NewSession(name)
+			if err != nil {
+				return "", err
+			}
+
+			// data-phx-main ??
 			if _, err := fmt.Fprintf(
 				&b,
 				`<%s id="%s" data-phx-view="%s" data-phx-session="%s" data-phx-static="%s">`,
@@ -107,6 +116,14 @@ func (r *Renderer) RenderPage(wr io.Writer, page string, s *Session) error {
 	})
 
 	return t.ExecuteTemplate(wr, page, nil)
+}
+
+func (r *Renderer) Mount(view string, s *Session) error {
+	return r._views[view].OnMount(s)
+}
+
+func (r *Renderer) Event(view string, s *Session, e *channel.Event) error {
+	return r._views[view].HandleEvent(s, e)
 }
 
 func (r *Renderer) RenderView(view string, s *Session) (string, error) {

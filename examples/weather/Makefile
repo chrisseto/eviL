@@ -4,7 +4,7 @@ assets:
 
 .PHONY: weather
 weather:
-	go build -o $@ ./main.go
+	go build -o $@ ./*.go
 
 .PHONY: server
 server: assets weather
