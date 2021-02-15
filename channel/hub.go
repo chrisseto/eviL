@@ -16,6 +16,7 @@ type Hub struct {
 
 	mu       sync.Mutex
 	channels map[string]Channel
+	sessions map[*melody.Session]*Session
 }
 
 var _ http.Handler = &Hub{}
@@ -48,6 +49,22 @@ func (h *Hub) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *Hub) wrappedSession(s *melody.Session) *Session {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	if wrapped, ok := h.sessions[s]; ok {
+		return wrapped
+	}
+
+	wrapped := &Session{session:s}
+
+	// TODO Will need to prune this when sessions leave
+	h.sessions[s] = wrapped
+
+	return wrapped
+}
+
 func (h *Hub) onMessage(session *melody.Session, data []byte) error {
 	var e Message
 	if err := json.Unmarshal(data, &e); err != nil {
@@ -76,16 +93,15 @@ func (h *Hub) onMessage(session *melody.Session, data []byte) error {
 
 		switch e.Event {
 		case TypeJoin:
-			resp, err = channel.Join(session, &e)
-		case TypeHearbeat:
-			// Should validate topic == phoenix ??
-			// Should return an empty reply
+			resp, err = channel.Join(h.wrappedSession(session), &e)
 		default:
-			resp, err = channel.Handle(session, &e)
+			resp, err = channel.Handle(h.wrappedSession(session), &e)
 		}
 	} else {
+		// Giant switch might be nicer
 		switch e.Event {
 		case TypeHearbeat:
+			// Should return an empty reply
 			resp = map[string]interface{}{}
 		default:
 			return errors.Newf("unknown phoenix event: %s", e.Event)

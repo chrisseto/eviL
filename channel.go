@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 
 	"github.com/chrisseto/evil/channel"
-	"github.com/olahol/melody"
 )
 
 type LiveViewChannel struct {
@@ -14,13 +13,14 @@ type LiveViewChannel struct {
 
 var _ channel.Channel = &LiveViewChannel{}
 
-func (c *LiveViewChannel) Join(_ *melody.Session, m *channel.Message) (interface{}, error) {
+func (c *LiveViewChannel) Join(_ *channel.Session, m *channel.Message) (interface{}, error) {
 	var j channel.Join
 	if err := json.Unmarshal(m.Payload, &j); err != nil {
 		return nil, err
 	}
 
 	// TODO should actually validate this
+	// TODO mix with melody sessions
 	session, err := c.SessionFactory.FromToken(j.Session)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func (c *LiveViewChannel) Join(_ *melody.Session, m *channel.Message) (interface
 	}, nil
 }
 
-func (c *LiveViewChannel) Handle(_ *melody.Session, m *channel.Message) (interface{}, error) {
+func (c *LiveViewChannel) Handle(_ *channel.Session, m *channel.Message) (interface{}, error) {
 	var e channel.Event
 	if err := json.Unmarshal(m.Payload, &e); err != nil {
 		return nil, err
