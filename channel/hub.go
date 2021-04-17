@@ -25,6 +25,7 @@ func NewHub() *Hub {
 	h := &Hub{
 		router:   melody.New(),
 		channels: make(map[string]Channel),
+		sessions: make(map[*melody.Session]*Session),
 	}
 
 	h.router.HandleMessage(func(s *melody.Session, data []byte) {
@@ -57,7 +58,7 @@ func (h *Hub) wrappedSession(s *melody.Session) *Session {
 		return wrapped
 	}
 
-	wrapped := &Session{session:s}
+	wrapped := &Session{session: s}
 
 	// TODO Will need to prune this when sessions leave
 	h.sessions[s] = wrapped
@@ -115,7 +116,7 @@ func (h *Hub) onMessage(session *melody.Session, data []byte) error {
 	if err != nil {
 		reply.Status = StatusError
 		reply.Payload = err
-		fmt.Printf("Failed to handle message: %#v\n", e)
+		fmt.Printf("Failed to handle message: %+v\n", err)
 	} else {
 		reply.Status = StatusOK
 		reply.Payload = resp

@@ -1,0 +1,12 @@
+<h1>Timeline</h1>
+
+{{if (eq .Action "new") || (eq .Action "edit")}}
+  <!-TODO->
+{{end}}
+
+<div id="posts" phx-update="prepend">
+  {{range .Posts}}
+    <div id="post-{{ .ID }}">
+    </div>
+  {{end}}
+</div>

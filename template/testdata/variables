@@ -1,0 +1,41 @@
+parse
+<h1>{{ . }}</h1>
+----
+
+render
+"Hello"
+----
+<h1>Hello</h1>
+
+diff
+"Hello"
+----
+{
+	"0": "\"Hello\"",
+	"s": [
+		"\u003ch1\u003e",
+		"\u003c/h1\u003e"
+	]
+}
+
+parse
+<h1>{{ .Greeting }} {{ .Subject }}</h1>
+----
+
+render
+{"Greeting": "Hello", "Subject": "World"}
+----
+<h1>Hello World</h1>
+
+diff
+{"Greeting": "Hello", "Subject": "World"}
+----
+{
+	"0": "\"Hello\"",
+	"1": "\"World\"",
+	"s": [
+		"\u003ch1\u003e",
+		" ",
+		"\u003c/h1\u003e"
+	]
+}

@@ -1,0 +1,32 @@
+parse
+{{define "component"}}
+  Hello World
+{{end}}
+
+{{evil_component "component"}}
+----
+
+diff
+null
+----
+{
+	"0": {
+		"s": [
+			"\n  Hello World\n"
+		]
+	},
+	"s": [
+		"\n\n"
+	]
+}
+
+render
+null
+----
+----
+
+
+
+  Hello World
+----
+----

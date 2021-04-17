@@ -1,0 +1,73 @@
+parse
+<h1>Hello World</h1>
+----
+
+render
+----
+<h1>Hello World</h1>
+
+diff
+----
+{
+	"s": [
+		"\u003ch1\u003eHello World\u003c/h1\u003e"
+	]
+}
+
+parse
+<h1>{{ "Hello World" }}</h1>
+
+render
+----
+
+diff
+----
+{
+	"0": "\"Hello World\"",
+	"s": [
+		"\u003ch1\u003e",
+		"\u003c/h1\u003e\n\nrender"
+	]
+}
+
+parse
+<p>{{ 42 }}</p>
+----
+
+render
+----
+<p>42</p>
+
+diff
+----
+{
+	"0": "\"42\"",
+	"s": [
+		"\u003cp\u003e",
+		"\u003c/p\u003e"
+	]
+}
+
+# {{template}} blocks work as expected
+
+parse
+{{define "component"}}
+  Hello World
+{{end}}
+
+{{template "component"}}
+----
+
+render
+null
+----
+
+diff
+null
+----
+{
+	"0": "\"\\n  Hello World\\n\"",
+	"s": [
+		"\n\n"
+	]
+}

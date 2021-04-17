@@ -8,7 +8,7 @@ import (
 
 type Session struct {
 	session *melody.Session
-	ctx context.Context
+	ctx     context.Context
 }
 
 func (s *Session) Context() context.Context {

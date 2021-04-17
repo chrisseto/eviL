@@ -3,7 +3,9 @@ module github.com/chrisseto/evil
 go 1.15
 
 require (
+	github.com/cockroachdb/datadriven v1.0.0
 	github.com/cockroachdb/errors v1.8.2
+	github.com/davecgh/go-spew v1.1.1
 	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect

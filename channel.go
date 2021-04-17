@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 
 	"github.com/chrisseto/evil/channel"
+	"github.com/chrisseto/evil/template"
+	"github.com/cockroachdb/errors"
 )
 
 type LiveViewChannel struct {
-	Renderer       *Renderer
+	Templates      map[string]*template.Template
 	SessionFactory *SessionFactory
 }
 
@@ -26,21 +28,18 @@ func (c *LiveViewChannel) Join(_ *channel.Session, m *channel.Message) (interfac
 		return nil, err
 	}
 
-	if err := c.Renderer.Mount(session.View, session); err != nil {
-		return nil, err
+	// if err := c.Renderer.Mount(session.View, session); err != nil {
+	// 	return nil, err
+	// }
+
+	template, ok := c.Templates[session.View]
+	if !ok {
+		return nil, errors.Newf("no such view: %s", session.View)
 	}
 
-	out, err := c.Renderer.RenderView(session.View, session)
-	if err != nil {
-		return nil, err
-	}
+	diff := template.Render(session)
 
-	return map[string]interface{}{
-		"rendered": &Diff{
-			Dynamic: []string{out, ""},
-			Static:  []string{" ", " "},
-		},
-	}, nil
+	return diff, nil
 }
 
 func (c *LiveViewChannel) Handle(_ *channel.Session, m *channel.Message) (interface{}, error) {
@@ -49,24 +48,21 @@ func (c *LiveViewChannel) Handle(_ *channel.Session, m *channel.Message) (interf
 		return nil, err
 	}
 
-	s, err := c.SessionFactory.LoadSession(m.Topic[3:])
+	session, err := c.SessionFactory.LoadSession(m.Topic[3:])
 	if err != nil {
 		return nil, err
 	}
 
-	if err := c.Renderer.Event(s.View, s, &e); err != nil {
-		return nil, err
+	// if err := c.Renderer.Event(s.View, s, &e); err != nil {
+	// 	return nil, err
+	// }
+
+	template, ok := c.Templates[session.View]
+	if !ok {
+		return nil, errors.Newf("no such view: %s", session.View)
 	}
 
-	out, err := c.Renderer.RenderView(s.View, s)
-	if err != nil {
-		return nil, err
-	}
+	diff := template.Render(session)
 
-	return map[string]interface{}{
-		"diff": &Diff{
-			Dynamic: []string{out, ""},
-			Static:  []string{" ", " "},
-		},
-	}, nil
+	return diff, nil
 }
