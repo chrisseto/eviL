@@ -6,63 +6,81 @@ import (
 	"github.com/chrisseto/evil/channel"
 	"github.com/chrisseto/evil/template"
 	"github.com/cockroachdb/errors"
+	"github.com/dgrijalva/jwt-go"
 )
 
 type LiveViewChannel struct {
-	Templates      map[string]*template.Template
+	Template       *template.Template
 	SessionFactory *SessionFactory
+	Views          map[string]View
 }
 
 var _ channel.Channel = &LiveViewChannel{}
 
-func (c *LiveViewChannel) Join(_ *channel.Session, m *channel.Message) (interface{}, error) {
+var secret = []byte("password123")
+
+func (c *LiveViewChannel) RegisterView(name string, view View) {
+	c.Views[name] = view
+}
+
+func (c *LiveViewChannel) verifySession(signed string) (*SessionClaims, error) {
+	token, err := jwt.ParseWithClaims(signed, &SessionClaims{}, func(t *jwt.Token) (interface{}, error) {
+		_ = t.Method.(*jwt.SigningMethodHMAC)
+		return secret, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	claims := token.Claims.(*SessionClaims)
+
+	if err := token.Claims.Valid(); err != nil {
+		return nil, err
+	}
+
+	return claims, nil
+}
+
+func (c *LiveViewChannel) Join(session *channel.Session, m *channel.Message) (interface{}, error) {
 	var j channel.Join
 	if err := json.Unmarshal(m.Payload, &j); err != nil {
 		return nil, err
 	}
 
-	// TODO should actually validate this
-	// TODO mix with melody sessions
-	session, err := c.SessionFactory.FromToken(j.Session)
+	claims, err := c.verifySession(j.Session)
 	if err != nil {
 		return nil, err
 	}
 
-	// if err := c.Renderer.Mount(session.View, session); err != nil {
-	// 	return nil, err
-	// }
-
-	template, ok := c.Templates[session.View]
-	if !ok {
-		return nil, errors.Newf("no such view: %s", session.View)
+	if view, ok := c.Views[claims.View]; ok {
+		if err := view.OnMount(session); err != nil {
+			return nil, err
+		}
 	}
 
-	diff := template.Render(session)
+	diff, err := c.Template.ExecuteTemplate(claims.View, session.Keys())
+	if err != nil {
+		return nil, errors.Wrap(err, "executing template")
+	}
 
-	return diff, nil
+	return map[string]interface{}{
+		"rendered": diff,
+	}, nil
 }
 
-func (c *LiveViewChannel) Handle(_ *channel.Session, m *channel.Message) (interface{}, error) {
+func (c *LiveViewChannel) Handle(session *channel.Session, m *channel.Message) (interface{}, error) {
 	var e channel.Event
 	if err := json.Unmarshal(m.Payload, &e); err != nil {
 		return nil, err
 	}
 
-	session, err := c.SessionFactory.LoadSession(m.Topic[3:])
-	if err != nil {
-		return nil, err
-	}
-
-	// if err := c.Renderer.Event(s.View, s, &e); err != nil {
-	// 	return nil, err
+	// if view, ok := c.Views[claims.View]; ok {
+	// 	if err := view.OnMount(session); err != nil {
+	// 		return nil, err
+	// 	}
 	// }
 
-	template, ok := c.Templates[session.View]
-	if !ok {
-		return nil, errors.Newf("no such view: %s", session.View)
-	}
+	diff, err := c.Template.ExecuteTemplate("", session)
 
-	diff := template.Render(session)
-
-	return diff, nil
+	return diff, errors.Wrap(err, "executing template")
 }

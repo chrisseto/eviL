@@ -6,6 +6,7 @@ import (
 
 const (
 	evilComponent = "evil_component"
+	evilRender = "evil_render"
 )
 
 func isEvilComponent(n *parse.ActionNode) bool {

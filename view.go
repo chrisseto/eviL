@@ -5,7 +5,6 @@ import (
 )
 
 type View interface {
-	OnMount(*Session) error
-	ToArgs(*Session) (interface{}, error)
-	HandleEvent(*Session, *channel.Event) error
+	OnMount(*channel.Session) error
+	HandleEvent(*channel.Session, *channel.Event) error
 }

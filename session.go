@@ -9,6 +9,14 @@ import (
 	"github.com/cockroachdb/errors"
 )
 
+type SessionClaims struct {
+	View string
+}
+
+func (s *SessionClaims) Valid() error {
+	return nil
+}
+
 // Session is an evil session. NOT a website session
 type Session struct {
 	ID        string          `json:"id"`

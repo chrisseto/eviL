@@ -1,9 +1,15 @@
 send
-["4","4","lv:phx-FnK-inTSqshWyhaB","phx_join",{"url":"http://localhost:4000/thermostat","params":{"_csrf_token":"Hgw4VxBbPiYCMz1CEnoxPjc-GQ9BbyRnXTBnb3uokeNwMWifhrPkvVJU"},"session":"SFMyNTY.g3QAAAACZAAEZGF0YWgCYQR0AAAAB2QAAmlkbQAAABRwaHgtRm5LLWluVFNxc2hXeWhhQmQACnBhcmVudF9waWRkAANuaWxkAAhyb290X3BpZGQAA25pbGQACXJvb3Rfdmlld2QAHUVsaXhpci5EZW1vV2ViLlRoZXJtb3N0YXRMaXZlZAAGcm91dGVyZAAVRWxpeGlyLkRlbW9XZWIuUm91dGVyZAAHc2Vzc2lvbnQAAAAAZAAEdmlld2QAHUVsaXhpci5EZW1vV2ViLlRoZXJtb3N0YXRMaXZlZAAGc2lnbmVkbgYA5tNenngB.uM8gEiy4A9sFjKxalBh5FoF10Fn4nVDYFvAH_En1qf0","static":"SFMyNTY.g3QAAAACZAAEZGF0YWgCYQR0AAAAA2QACmFzc2lnbl9uZXdqZAAFZmxhc2h0AAAAAGQAAmlkbQAAABRwaHgtRm5LLWluVFNxc2hXeWhhQmQABnNpZ25lZG4GAObTXp54AQ.hz7Lwe0_JsPtL-_o6BA5zBojWCvVCap2avFzjR3OQJM","joins":0}]
+["4","4","lv:phx-FnK-inTSqshWyhaB","phx_join",{"url":"http://localhost:4000/thermostat","params":{"_csrf_token":"Hgw4VxBbPiYCMz1CEnoxPjc-GQ9BbyRnXTBnb3uokeNwMWifhrPkvVJU"},"session":"$TOKEN","static":"SFMyNTY.g3QAAAACZAAEZGF0YWgCYQR0AAAAA2QACmFzc2lnbl9uZXdqZAAFZmxhc2h0AAAAAGQAAmlkbQAAABRwaHgtRm5LLWluVFNxc2hXeWhhQmQABnNpZ25lZG4GAObTXp54AQ.hz7Lwe0_JsPtL-_o6BA5zBojWCvVCap2avFzjR3OQJM","joins":0}]
+----
+
+read
 ----
 ["4","4","lv:phx-FnK-inTSqshWyhaB","phx_reply",{"response":{"rendered":{"0":"cooling","1":"cooling","2":"15:31:58","3":"72","4":"<div data-phx-parent-id=\"phx-FnK-inTSqshWyhaB\" data-phx-session=\"SFMyNTY.g3QAAAACZAAEZGF0YWgCYQR0AAAAB2QAAmlkbQAAAAd3ZWF0aGVyZAAKcGFyZW50X3BpZFhkAA1ub25vZGVAbm9ob3N0AAADJwAAAAAAAAAAZAAIcm9vdF9waWRYZAANbm9ub2RlQG5vaG9zdAAAAycAAAAAAAAAAGQACXJvb3Rfdmlld2QAHUVsaXhpci5EZW1vV2ViLlRoZXJtb3N0YXRMaXZlZAAGcm91dGVyZAAVRWxpeGlyLkRlbW9XZWIuUm91dGVyZAAHc2Vzc2lvbnQAAAAAZAAEdmlld2QAGkVsaXhpci5EZW1vV2ViLldlYXRoZXJMaXZlZAAGc2lnbmVkbgYA59VenngB.yaavK4tK4noNBfRvNuohzKLyP9Q20exEsp7mtbB2DFs\" data-phx-static=\"\" data-phx-view=\"WeatherLive\" id=\"weather\"></div>","s":["<div class=\"thermostat\">\n  <div class=\"bar ","\">\n    <a href=\"#\" phx-click=\"toggle-mode\">","</a>\n    <span>","</span>\n  </div>\n  <div class=\"controls\">\n    <span class=\"reading\">","</span>\n    <button phx-click=\"dec\" class=\"minus\">-</button>\n    <button phx-click=\"inc\" class=\"plus\">+</button>\n    <span class=\"weather\">\n      ","\n    </span>\n  </div>\n</div>\n"]}},"status":"ok"}]
 
 send
 ["7","7","lv:weather","phx_join",{"params":{"_csrf_token":"Hgw4VxBbPiYCMz1CEnoxPjc-GQ9BbyRnXTBnb3uokeNwMWifhrPkvVJU"},"session":"SFMyNTY.g3QAAAACZAAEZGF0YWgCYQR0AAAAB2QAAmlkbQAAAAd3ZWF0aGVyZAAKcGFyZW50X3BpZFhkAA1ub25vZGVAbm9ob3N0AAADJwAAAAAAAAAAZAAIcm9vdF9waWRYZAANbm9ub2RlQG5vaG9zdAAAAycAAAAAAAAAAGQACXJvb3Rfdmlld2QAHUVsaXhpci5EZW1vV2ViLlRoZXJtb3N0YXRMaXZlZAAGcm91dGVyZAAVRWxpeGlyLkRlbW9XZWIuUm91dGVyZAAHc2Vzc2lvbnQAAAAAZAAEdmlld2QAGkVsaXhpci5EZW1vV2ViLldlYXRoZXJMaXZlZAAGc2lnbmVkbgYA59VenngB.yaavK4tK4noNBfRvNuohzKLyP9Q20exEsp7mtbB2DFs","static":null,"joins":0}]
+----
+
+read
 ----
 ["7","7","lv:weather","phx_reply",{"response":{"rendered":{"0":"","1":"...","s":["<div>\n  <form phx-submit=\"set-location\">\n    <input name=\"location\" placeholder=\"Location\" value=\"","\"/>\n    ","\n  </form>\n</div>\n"]}},"status":"ok"}]

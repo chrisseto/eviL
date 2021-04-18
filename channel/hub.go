@@ -28,6 +28,8 @@ func NewHub() *Hub {
 		sessions: make(map[*melody.Session]*Session),
 	}
 
+	h.router.Config.MaxMessageSize = 1024 * 1024
+
 	h.router.HandleMessage(func(s *melody.Session, data []byte) {
 		if err := h.onMessage(s, data); err != nil {
 			panic(err)
