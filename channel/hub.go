@@ -125,7 +125,7 @@ func (h *Hub) onMessage(session *melody.Session, data []byte) error {
 	}
 
 	if err := writeJSON(session, reply); err != nil {
-		return err
+		return errors.Wrap(err, "writing JSON")
 	}
 
 	return nil

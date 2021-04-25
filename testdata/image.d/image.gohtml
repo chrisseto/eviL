@@ -1,0 +1,13 @@
+<div style="margin-left: {{ .Depth * 50 }}px;">
+  <form phx-change="update">
+    <input type="range" min="10" max="630" name="width" value="{{ .Width }}" />
+    {{ .Width }}px
+    <fieldset>
+      White <%= radio_tag(name: :bg, value: "white", checked: @bg) %>
+      Black <%= radio_tag(name: :bg, value: "black", checked: @bg) %>
+      Blue <%= radio_tag(name: :bg, value: "blue", checked: @bg) %>
+    </fieldset>
+  </form>
+  <br/>
+  <img phx-click="boom" src="<%= Routes.static_path(DemoWeb.Endpoint, "/images/phoenix.png") %>" width="<%= @width %>" style="background: <%= @bg %>;" />
+</div>

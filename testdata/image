@@ -1,0 +1,34 @@
+get url=/image
+----
+
+send
+["4","4","lv:phx-FncOEWlPX2iTLACj","phx_join",{"url":"http://localhost:4000/image","params":{"_csrf_token":"NxUCCToGKRFEZBZPahkiCDcWDyNQfTFHqMx0HnbX-2ez54zPhZFGgD_u"},"session":"SFMyNTY.g3QAAAACZAAEZGF0YWgCYQR0AAAAB2QAAmlkbQAAABRwaHgtRm5jT0VXbFBYMmlUTEFDamQACnBhcmVudF9waWRkAANuaWxkAAhyb290X3BpZGQAA25pbGQACXJvb3Rfdmlld2QAGEVsaXhpci5EZW1vV2ViLkltYWdlTGl2ZWQABnJvdXRlcmQAFUVsaXhpci5EZW1vV2ViLlJvdXRlcmQAB3Nlc3Npb250AAAAAGQABHZpZXdkABhFbGl4aXIuRGVtb1dlYi5JbWFnZUxpdmVkAAZzaWduZWRuBgD_8LDmeAE.7zO3b1iqJA1FMeDVO_G0duGmX0WiisL8wc-b1LtyakQ","static":"SFMyNTY.g3QAAAACZAAEZGF0YWgCYQR0AAAAA2QACmFzc2lnbl9uZXdqZAAFZmxhc2h0AAAAAGQAAmlkbQAAABRwaHgtRm5jT0VXbFBYMmlUTEFDamQABnNpZ25lZG4GAP_wsOZ4AQ.2b2Zy9_76NyJvrERmKiVlkpq1vSLP-XnS1N8MGLepdA","joins":0}]
+----
+
+read
+----
+["4","4","lv:phx-FncOEWlPX2iTLACj","phx_reply",{"response":{"rendered":{"0":"0","1":"100","2":"100","3":{"0":"bg","1":"white","2":"checked","s":["<input type=\"radio\" name=\"","\" value=\"","\"\n  "," />\n"]},"4":{"0":"bg","1":"black","2":"","s":["<input type=\"radio\" name=\"","\" value=\"","\"\n  "," />\n"]},"5":{"0":"bg","1":"blue","2":"","s":["<input type=\"radio\" name=\"","\" value=\"","\"\n  "," />\n"]},"6":"/images/phoenix.png","7":"100","8":"white","s":["<div style=\"margin-left: ","px;\">\n  <form phx-change=\"update\">\n    <input type=\"range\" min=\"10\" max=\"630\" name=\"width\" value=\"","\" />\n    ","px\n    <fieldset>\n      White ","\n      Black ","\n      Blue ","\n    </fieldset>\n  </form>\n  <br/>\n  <img phx-click=\"boom\" src=\"","\" width=\"","\" style=\"background: ",";\" />\n</div>\n"]}},"status":"ok"}]
+
+send
+----
+[null,"5","phoenix","heartbeat",{}]
+
+read
+----
+[null,"6","phoenix","phx_reply",{"response":{},"status":"ok"}]
+
+send
+["4","8","lv:phx-FncOEWlPX2iTLACj","event",{"type":"form","event":"update","value":"width=100&bg=black&_target=bg"}]
+----
+
+read
+----
+["4","8","lv:phx-FncOEWlPX2iTLACj","phx_reply",{"response":{"diff":{"3":{"0":"bg","1":"white","2":""},"4":{"0":"bg","1":"black","2":"checked"},"5":{"0":"bg","1":"blue","2":""},"8":"black"}},"status":"ok"}]
+
+send
+["4","11","lv:phx-FncOEWlPX2iTLACj","event",{"type":"form","event":"update","value":"width=94&bg=black&_target=width"}]
+----
+
+read
+----
+["4","11","lv:phx-FncOEWlPX2iTLACj","phx_reply",{"response":{"diff":{"1":"94","2":"94","7":"94"}},"status":"ok"}]

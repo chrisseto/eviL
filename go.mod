@@ -1,11 +1,10 @@
 module github.com/chrisseto/evil
 
-go 1.15
+go 1.16
 
 require (
 	github.com/cockroachdb/datadriven v1.0.0
 	github.com/cockroachdb/errors v1.8.2
-	github.com/cristalhq/jwt/v3 v3.0.14
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/gorilla/websocket v1.4.2

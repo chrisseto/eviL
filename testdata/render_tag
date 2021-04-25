@@ -1,0 +1,15 @@
+render div id=phx-123
+----
+----
+<div id="phx-123">
+	
+</div>
+----
+----
+
+render main data-phx-main=true
+Hello, World!
+----
+<main data-phx-main="true">
+	Hello, World!
+</main>

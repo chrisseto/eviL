@@ -1,12 +1,14 @@
 package evil
 
 import (
-	// "html/template"
 	// "net"
 	"net/http"
+	"reflect"
 
 	"github.com/chrisseto/evil/channel"
-	"github.com/chrisseto/evil/template"
+	// "github.com/chrisseto/evil/template"
+
+	// "github.com/cockroachdb/errors"
 	"github.com/dgrijalva/jwt-go"
 )
 
@@ -17,15 +19,13 @@ type Server struct {
 }
 
 func NewServer(
-	tpl *template.Template,
 	secret []byte,
 ) *Server {
 	hub := channel.NewHub()
 
 	channel := LiveViewChannel{
-		SessionFactory: NewSessionFactory(),
-		Template:       tpl,
-		Views:          map[string]View{},
+		Secret:   secret,
+		Views:    map[string]View{},
 	}
 
 	hub.Register("lv:*", &channel)
@@ -37,17 +37,50 @@ func NewServer(
 	}
 }
 
-func (s *Server) NewToken(view string) (string, error) {
+func (s *Server) NewToken(id, view string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &SessionClaims{
+		ID:   id,
 		View: view,
 	})
 	return token.SignedString(s.secret)
 }
 
-func (s *Server) RegisterView(name string, view View) {
+func (s *Server) Mount(path string, view View) {
+	// TODO use path
+	name := reflect.TypeOf(view).Name()
 	s.channel.RegisterView(name, view)
 }
 
 func (s *Server) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	s.hub.ServeHTTP(rw, r)
+}
+
+func (s *Server) RenderView(viewName string) (string, error) {
+	instance, err := s.channel.SpawnInstance(viewName)
+	if err != nil {
+		return "", err
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, instance.Claims())
+	sessionToken, err := token.SignedString(s.secret)
+	if err != nil {
+		return "", err
+	}
+
+	diff, err := s.channel.Views[viewName].Template().Execute(nil)
+	if err != nil {
+		return "", err
+	}
+
+	return RenderTag(
+		"div",
+		map[string]string{
+			"id":               instance.ID,
+			"data-phx-main":    "true",
+			"data-phx-static":  "TODO",
+			"data-phx-session": sessionToken,
+			"data-phx-view":    viewName,
+		},
+		diff.String(),
+	)
 }

@@ -10,6 +10,7 @@ import (
 )
 
 type SessionClaims struct {
+	ID   string
 	View string
 }
 

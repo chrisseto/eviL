@@ -1,9 +1,12 @@
 package evil
 
 import (
+	"math/rand"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/chrisseto/evil/channel"
 	"github.com/chrisseto/evil/template"
@@ -12,7 +15,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type Weather struct{}
+type SimpleLive struct{}
+
+func (t *SimpleLive) OnMount(session *channel.Session) error {
+	return nil
+}
+
+func (t *SimpleLive) HandleEvent(session *channel.Session, event *channel.Event) error {
+	return nil
+}
 
 type Thermostat struct{}
 
@@ -28,12 +39,16 @@ func (t *Thermostat) HandleEvent(session *channel.Session, event *channel.Event)
 }
 
 func TestServer(t *testing.T) {
-	tpl, err := template.ParseGlob("testdata/thermostat.d/*")
+	rand.Seed(0)
+	defer rand.Seed(time.Now().UnixNano())
+
+	tpl, err := template.ParseGlob("testdata/simple.d/*")
 	require.NoError(t, err)
 
 	srv := NewServer(tpl, []byte("password123"))
 
-	srv.RegisterView("thermostat.gohtml", &Thermostat{})
+	// srv.RegisterView("thermostat.gohtml", &Thermostat{})
+	srv.RegisterView("SimpleLive", &SimpleLive{})
 
 	s := httptest.NewServer(srv)
 	defer s.Close()
@@ -46,15 +61,30 @@ func TestServer(t *testing.T) {
 
 	defer conn.Close()
 
-	token, err := srv.NewToken("thermostat.gohtml")
-	require.NoError(t, err)
+	var id string
+	var sessionToken string
 
-	datadriven.RunTest(t, "testdata/thermostat", func(t *testing.T, d *datadriven.TestData) string {
+	datadriven.RunTest(t, "testdata/simple", func(t *testing.T, d *datadriven.TestData) string {
 		switch d.Cmd {
-		case "send":
-			message := strings.ReplaceAll(d.Input, "$TOKEN", token)
+		case "render":
+			rendered, err := srv.RenderView(d.CmdArgs[0].Key)
+			if err != nil {
+				d.Fatalf(t, "%+v", err)
+			}
 
-			if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
+			expr := regexp.MustCompile(`data-phx-session="([^"]+)"`)
+			sessionToken = expr.FindStringSubmatch(rendered)[1]
+
+			expr = regexp.MustCompile(`id="([^"]+)"`)
+			id = expr.FindStringSubmatch(rendered)[1]
+
+			return rendered
+
+		case "send":
+			d.Input = strings.ReplaceAll(d.Input, "$ID", id)
+			d.Input = strings.ReplaceAll(d.Input, "$SESSION_TOKEN", sessionToken)
+
+			if err := conn.WriteMessage(websocket.TextMessage, []byte(d.Input)); err != nil {
 				d.Fatalf(t, "WriteMessage failed: %+v", err)
 			}
 

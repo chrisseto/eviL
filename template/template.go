@@ -45,11 +45,30 @@ func Compile(stdTpl *template.Template) *Template {
 	}
 }
 
+func (t *Template) Lookup(name string) *Template {
+	tpl := t.root.Lookup(name)
+	if tpl == nil {
+		return nil
+	}
+
+	return &Template{
+		root: tpl,
+	}
+}
+
+func (t *Template) Execute(data interface{}) (Diff, error) {
+	return t.execTemplate(t.root, data)
+}
+
 func (t *Template) ExecuteTemplate(name string, data interface{}) (Diff, error) {
 	stdTpl := t.root.Lookup(name)
 	if stdTpl == nil {
 		return Diff{}, errors.Newf("no such template: %s", name)
 	}
+	return t.execTemplate(stdTpl, data)
+}
+
+func (t *Template) execTemplate(stdTpl *template.Template, data interface{}) (Diff, error) {
 
 	var static []string
 	var dynamic []interface{}

@@ -1,0 +1,17 @@
+render SimpleLive
+----
+----
+<div data-phx-main="true" data-phx-session="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJJRCI6InBoeC1jdWJ5aCIsIlZpZXciOiJTaW1wbGVMaXZlIn0.-ZyCuIJtWda718ecZUcA35L65U4p6E4vUUbA9KL17VI" data-phx-static="TODO" data-phx-view="SimpleLive" id="phx-cubyh">
+	hello world
+
+</div>
+----
+----
+
+send
+["4","4","lv:$ID","phx_join",{"url":"http://localhost:4000/simple","params":{"_csrf_token":"AhIhEBhSdxwoKmchJgA2XyJOVi4nMwlJpdBfU44CgB5vNlelGx4EDcO9","_track_static":["http://localhost:4000/css/app.css","http://localhost:4000/js/app.js"],"_mounts":0},"session":"$SESSION_TOKEN","static":"SFMyNTY.g2gDaAJhBHQAAAADZAAKYXNzaWduX25ld2pkAAVmbGFzaHQAAAAAZAACaWRtAAAAFHBoeC1GbmdOQThHWVdCZ2xHZ1FobgYAjzxm93gBYgABUYA.TWqiho7WjmLzHtQRH4TE5wR456EXaxxacTzMk23za3Q"}]
+----
+
+read
+----
+["4","4","lv:phx-cubyh","phx_reply",{"response":{"rendered":{"s":["hello world\n"]}},"status":"ok"}]
