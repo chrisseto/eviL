@@ -1,10 +1,7 @@
 package channel
 
 import (
-	// "bytes"
 	"encoding/json"
-	// "fmt"
-	// "github.com/cockroachdb/errors"
 )
 
 type EventType string
