@@ -2,9 +2,9 @@ package evil
 
 import (
 	"fmt"
+	"math/rand"
 	"sort"
 	"strings"
-	"math/rand"
 	"text/template"
 )
 

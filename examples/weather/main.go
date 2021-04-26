@@ -1,50 +1,107 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"net"
 	"net/http"
+	"net/url"
+	stdTemplate "text/template"
+	"time"
 
 	"github.com/chrisseto/evil"
 	"github.com/chrisseto/evil/channel"
+	"github.com/chrisseto/evil/template"
 )
 
-func main() {
-	mux := http.NewServeMux()
-	hub := channel.NewHub()
-	fileServer := http.FileServer(http.Dir("./dist/"))
+//go:embed index.html
+var indexHTML string
 
-	sf := evil.NewSessionFactory()
+//go:embed weather.html
+var weatherHTML string
 
-	renderer, err := evil.NewRenderer(
-		"./dist/*.html",
-		"./dist/views/*.html",
-		"./dist/components/*.html",
-	)
+type Weather struct{}
+
+func (v Weather) OnMount(s evil.Session) error {
+	s.Set("Location", "Austin")
+	s.Set("Weather", "...")
+
+	go func() {
+		time.Sleep(time.Second)
+
+		weather, err := v.getWeather("Austin")
+		if err != nil {
+			panic(err)
+		}
+		s.Set("Location", "Austin")
+		s.Set("Weather", weather)
+	}()
+
+	return nil
+}
+
+func (v Weather) HandleEvent(s evil.Session, e *channel.Event) error {
+	values, err := url.ParseQuery(e.Value)
 	if err != nil {
-		panic(err)
+		return err
+	}
+	weather, err := v.getWeather(values.Get("location"))
+	if err != nil {
+		return err
+	}
+	s.Set("Location", values.Get("location"))
+	s.Set("Weather", weather)
+	return nil
+}
+
+func (Weather) Template() *template.Template {
+	return template.Compile(stdTemplate.Must(
+		stdTemplate.New("").Parse(weatherHTML),
+	))
+}
+
+func (v Weather) getWeather(location string) (string, error) {
+	resp, err := http.Get(fmt.Sprintf(
+		"http://wttr.in/%s?format=1",
+		url.PathEscape(location),
+	))
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	out, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+func main() {
+	srv := evil.NewServer([]byte(`sup3r5ecr3t!1`))
+	srv.Mount("/", Weather{})
+
+	lis, err := net.Listen("tcp", "127.0.0.1:5858")
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	renderer.SessionFactory = sf
+	log.Printf("listening on %s...\n", lis.Addr())
 
-	renderer.RegisterView("ClockView", &ClockView{})
-	renderer.RegisterView("WeatherView", &WeatherView{})
-
-	hub.Register("lv:*", &evil.LiveViewChannel{
-		Renderer:       renderer,
-		SessionFactory: sf,
-	})
-
+	mux := http.NewServeMux()
+	mux.Handle("/live/websocket", srv)
+	mux.Handle("/static/", http.StripPrefix("/static/", evil.StaticHandler))
 	mux.HandleFunc("/", func(rw http.ResponseWriter, req *http.Request) {
-		if err := renderer.RenderPage(rw, "index.html"); err != nil {
-			fmt.Printf("%s\n", err)
-			rw.WriteHeader(http.StatusInternalServerError)
+		content, err := srv.RenderView("Weather")
+		if err != nil {
+			panic(err)
 		}
+
+		rw.Write([]byte(fmt.Sprintf(indexHTML, content)))
 	})
 
-	mux.Handle("/live/websocket", hub)
-	mux.Handle("/assets/", http.StripPrefix("/assets/", fileServer))
-
-	if err := http.ListenAndServe("localhost:4747", mux); err != nil {
-		panic(err)
+	if err := http.Serve(lis, mux); err != nil {
+		log.Fatal(err)
 	}
 }

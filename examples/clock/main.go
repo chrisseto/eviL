@@ -1,12 +1,13 @@
 package main
 
 import (
-	"log"
+	_ "embed"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
-	_ "embed"
 	stdTemplate "text/template"
+	"time"
 
 	"github.com/chrisseto/evil"
 	"github.com/chrisseto/evil/channel"
@@ -16,29 +17,46 @@ import (
 //go:embed index.html
 var indexHTML string
 
-type Static struct {}
+//go:embed clock.html
+var clockHTML string
 
-func (Static) OnMount(*channel.Session) error {
+type Clock struct{}
+
+func (c Clock) OnMount(s evil.Session) error {
+	go c.doTick(s)
+	s.Set("Time", time.Now().Format(time.RFC1123))
 	return nil
 }
 
-func (Static) HandleEvent(*channel.Session, *channel.Event) error {
+func (Clock) doTick(s evil.Session) {
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-s.Done():
+			return
+		case <-ticker.C:
+			s.Set("Time", time.Now().Format(time.RFC1123))
+		}
+	}
+}
+
+func (Clock) HandleEvent(evil.Session, *channel.Event) error {
 	return nil
 }
 
-func (Static) Template() *template.Template {
+func (Clock) Template() *template.Template {
 	return template.Compile(stdTemplate.Must(
-		stdTemplate.New("Static").Parse(
-			`Hello, World!`,
-		),
+		stdTemplate.New("Static").Parse(clockHTML),
 	))
 }
 
 func main() {
-	srv := evil.NewServer([]byte(`some secret`))
-	srv.Mount("/", Static{})
+	srv := evil.NewServer([]byte(`sup3r5ecr3t!1`))
+	srv.Mount("/", Clock{})
 
-	lis, err := net.Listen("tcp", "127.0.0.1:5656")
+	lis, err := net.Listen("tcp", "127.0.0.1:5757")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -49,7 +67,7 @@ func main() {
 	mux.Handle("/live/websocket", srv)
 	mux.Handle("/static/", http.StripPrefix("/static/", evil.StaticHandler))
 	mux.HandleFunc("/", func(rw http.ResponseWriter, req *http.Request) {
-		content, err := srv.RenderView("Static")
+		content, err := srv.RenderView("Clock")
 		if err != nil {
 			panic(err)
 		}

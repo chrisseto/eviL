@@ -1,13 +1,10 @@
 package evil
 
 import (
-	// "net"
 	"net/http"
-	"reflect"
 
 	"github.com/chrisseto/evil/channel"
 	// "github.com/chrisseto/evil/template"
-
 	// "github.com/cockroachdb/errors"
 	"github.com/dgrijalva/jwt-go"
 )
@@ -25,7 +22,10 @@ func NewServer(
 
 	channel := LiveViewChannel{
 		Secret:   secret,
-		Views:    map[string]View{},
+		Views:    make(map[string]View),
+		Sessions: make(map[string]*session),
+		// TODO find a better way to pass this in?
+		broadcast: hub.Broadcast,
 	}
 
 	hub.Register("lv:*", &channel)
@@ -46,9 +46,7 @@ func (s *Server) NewToken(id, view string) (string, error) {
 }
 
 func (s *Server) Mount(path string, view View) {
-	// TODO use path
-	name := reflect.TypeOf(view).Name()
-	s.channel.RegisterView(name, view)
+	s.channel.RegisterView(view)
 }
 
 func (s *Server) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
@@ -56,7 +54,9 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) RenderView(viewName string) (string, error) {
-	instance, err := s.channel.SpawnInstance(viewName)
+	view := s.channel.Views[viewName]
+
+	instance, err := s.channel.SpawnInstance(ID(), view)
 	if err != nil {
 		return "", err
 	}
@@ -67,11 +67,12 @@ func (s *Server) RenderView(viewName string) (string, error) {
 		return "", err
 	}
 
-	diff, err := s.channel.Views[viewName].Template().Execute(nil)
+	diff, err := view.Template().Execute(instance.assigns)
 	if err != nil {
 		return "", err
 	}
 
+	// TODO allow tag to be customizable
 	return RenderTag(
 		"div",
 		map[string]string{

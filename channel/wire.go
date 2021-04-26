@@ -23,7 +23,7 @@ const (
 
 type Message struct {
 	JoinRef *string
-	Ref     string
+	Ref     *string
 	Topic   string
 	Event   EventType
 	Payload json.RawMessage
@@ -51,12 +51,23 @@ func (m *Message) MarshalJSON() ([]byte, error) {
 	})
 }
 
+// TODO combine with Message
 type Reply struct {
 	JoinRef *string     `json:"join_ref"`
-	Ref     string      `json:"ref"`
+	Ref     *string     `json:"ref"`
 	Topic   string      `json:"topic"`
 	Status  Status      `json:"status"`
 	Payload interface{} `json:"payload"`
+}
+
+func (r *Reply) SetPayload(resp interface{}, err error) {
+	if err != nil {
+		r.Status = StatusError
+		r.Payload = err // Might need some nice handling here
+	} else {
+		r.Status = StatusOK
+		r.Payload = resp
+	}
 }
 
 func (r *Reply) MarshalJSON() ([]byte, error) {

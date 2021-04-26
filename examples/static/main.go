@@ -1,11 +1,11 @@
 package main
 
 import (
-	"log"
+	_ "embed"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
-	_ "embed"
 	stdTemplate "text/template"
 
 	"github.com/chrisseto/evil"
@@ -16,7 +16,7 @@ import (
 //go:embed index.html
 var indexHTML string
 
-type Static struct {}
+type Static struct{}
 
 func (Static) OnMount(*channel.Session) error {
 	return nil

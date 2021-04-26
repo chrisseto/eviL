@@ -4,56 +4,41 @@ import (
 	"encoding/json"
 
 	"github.com/chrisseto/evil/channel"
-	"github.com/chrisseto/evil/template"
 	"github.com/cockroachdb/errors"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/olahol/melody"
 )
 
-// probably going to become "session"
-type Instance struct {
-	ID       string
-	RootView string
-	assigns  map[string]interface{}
-}
-
-func (i *Instance) Get(key string) interface{} {
-	return i.assigns[key]
-}
-
-func (i *Instance) Set(key string, value interface{}) {
-	i.assigns[key] = value
-}
-
-func (i *Instance) Claims() *SessionClaims {
-	return &SessionClaims{
-		ID:   i.ID,
-		View: i.RootView,
-	}
-}
-
 type LiveViewChannel struct {
-	Template *template.Template
-	Views    map[string]View
-	Secret   []byte
+	Views     map[string]View
+	Secret    []byte
+	Sessions  map[string]*session
+	broadcast func(string, string, interface{}) error
 }
 
 var _ channel.Channel = &LiveViewChannel{}
 
-func (c *LiveViewChannel) SpawnInstance(rootView string) (*Instance, error) {
-	if _, ok := c.Views[rootView]; !ok {
-		return nil, errors.Newf("no such view: %s", rootView)
+func (c *LiveViewChannel) SpawnInstance(id string, view View) (*session, error) {
+	if session, ok := c.Sessions[id]; ok {
+		return session, nil
 	}
 
-	// TODO check view existance
-	// TODO needs a life cycle
-	return &Instance{
-		ID:       ID(),
-		RootView: rootView,
-	}, nil
+	session := newSession(id, view, func(event string, data interface{}) error {
+		// not the best way to handle this
+		return c.broadcast(id, event, data)
+	})
+
+	c.Sessions[id] = session
+
+	return session, errors.Wrap(
+		session.start(),
+		"starting session",
+	)
 }
 
-func (c *LiveViewChannel) RegisterView(name string, view View) {
-	c.Views[name] = view
+func (c *LiveViewChannel) RegisterView(view View) {
+	// TODO error if already exists
+	c.Views[viewName(view)] = view
 }
 
 func (c *LiveViewChannel) verifySession(signed string) (*SessionClaims, error) {
@@ -74,7 +59,8 @@ func (c *LiveViewChannel) verifySession(signed string) (*SessionClaims, error) {
 	return claims, nil
 }
 
-func (c *LiveViewChannel) Join(session *channel.Session, m *channel.Message) (interface{}, error) {
+func (c *LiveViewChannel) Join(session *melody.Session, m *channel.Message) (interface{}, error) {
+	// TODO move join in evil
 	var j channel.Join
 	if err := json.Unmarshal(m.Payload, &j); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling into .Join")
@@ -87,35 +73,48 @@ func (c *LiveViewChannel) Join(session *channel.Session, m *channel.Message) (in
 
 	view := c.Views[claims.View]
 
-	// TODO this should become a "maybecallmount"
-	if err := view.OnMount(session); err != nil {
-		return nil, errors.Wrap(err, "calling mount")
+	instance, err := c.SpawnInstance(claims.ID, view)
+	if err != nil {
+		return nil, errors.Wrap(err, "spawning instance")
 	}
 
-	diff, err := view.Template().Execute(session.Keys())
-	if err != nil {
-		return nil, errors.Wrap(err, "executing template")
-	}
+	session.Set("id", claims.ID)
+	session.Set("view", claims.View)
+
+	diff, err := instance.RenderDiff()
 
 	// TODO make me a struct
 	return map[string]interface{}{
 		"rendered": diff,
-	}, nil
+	}, errors.Wrap(err, "executing template")
 }
 
-func (c *LiveViewChannel) Handle(session *channel.Session, m *channel.Message) (interface{}, error) {
+func (c *LiveViewChannel) Handle(session *melody.Session, m *channel.Message) (interface{}, error) {
+	// TODO move event in evil
 	var e channel.Event
 	if err := json.Unmarshal(m.Payload, &e); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling into an event")
 	}
 
-	// if view, ok := c.Views[claims.View]; ok {
-	// 	if err := view.OnMount(session); err != nil {
-	// 		return nil, err
-	// 	}
-	// }
+	instance, ok := c.Sessions[session.MustGet("id").(string)]
+	if !ok {
+		panic("no session")
+	}
 
-	diff, err := c.Template.ExecuteTemplate("", session)
+	if err := instance.RootView.HandleEvent(instance, &e); err != nil {
+		return nil, errors.Wrap(err, "handling event")
+	}
 
-	return diff, errors.Wrap(err, "executing template")
+	diff, err := instance.RenderDiff()
+
+	// TODO make me a struct
+	// TODO exclude statics
+	return map[string]interface{}{
+		"diff": diff,
+	}, errors.Wrap(err, "executing template")
+}
+
+func (c *LiveViewChannel) Leave(session *melody.Session) error {
+	// TODO
+	return nil
 }

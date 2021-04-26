@@ -1,8 +1,6 @@
-{{define "WeatherView"}}
 <div>
   <form phx-submit="set-location">
     <input name="location" placeholder="Location" value="{{.Location}}"/>
     {{ .Weather }}
   </form>
 </div>
-{{end}}

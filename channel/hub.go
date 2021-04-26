@@ -16,7 +16,6 @@ type Hub struct {
 
 	mu       sync.Mutex
 	channels map[string]Channel
-	sessions map[*melody.Session]*Session
 }
 
 var _ http.Handler = &Hub{}
@@ -25,7 +24,6 @@ func NewHub() *Hub {
 	h := &Hub{
 		router:   melody.New(),
 		channels: make(map[string]Channel),
-		sessions: make(map[*melody.Session]*Session),
 	}
 
 	h.router.Config.MaxMessageSize = 1024 * 1024
@@ -34,6 +32,13 @@ func NewHub() *Hub {
 		if err := h.onMessage(s, data); err != nil {
 			panic(err)
 		}
+	})
+
+	h.router.HandleClose(func(s *melody.Session, _ int, _ string) error {
+		if err := h.onLeave(s); err != nil {
+			panic(err)
+		}
+		return nil
 	})
 
 	return h
@@ -52,20 +57,31 @@ func (h *Hub) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Hub) wrappedSession(s *melody.Session) *Session {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	if wrapped, ok := h.sessions[s]; ok {
-		return wrapped
+func (h *Hub) Broadcast(pattern string, event string, payload interface{}) error {
+	marshalled, err := json.Marshal(payload)
+	if err != nil {
+		return errors.Wrap(err, "marshaling")
 	}
 
-	wrapped := &Session{session: s}
+	// This won't work with globbing :/
+	msg := Message{
+		// Hack
+		Topic:   "lv:" + pattern,
+		Event:   EventType(event),
+		Payload: marshalled,
+	}
 
-	// TODO Will need to prune this when sessions leave
-	h.sessions[s] = wrapped
+	data, err := json.Marshal(&msg)
+	if err != nil {
+		return errors.Wrap(err, "marshaling")
+	}
 
-	return wrapped
+	h.router.BroadcastFilter(data, func(session *melody.Session) bool {
+		// TODO allow globbing
+		return session.MustGet("id") == pattern
+	})
+
+	return nil
 }
 
 func (h *Hub) onMessage(session *melody.Session, data []byte) error {
@@ -74,7 +90,7 @@ func (h *Hub) onMessage(session *melody.Session, data []byte) error {
 		return errors.Wrap(err, "unmarshaling message")
 	}
 
-	fmt.Printf("Recieved Message: %#v\n", e)
+	fmt.Printf("recieved message: %#v\n", e)
 
 	reply := &Reply{
 		JoinRef: e.JoinRef,
@@ -96,9 +112,9 @@ func (h *Hub) onMessage(session *melody.Session, data []byte) error {
 
 		switch e.Event {
 		case TypeJoin:
-			resp, err = channel.Join(h.wrappedSession(session), &e)
+			resp, err = channel.Join(session, &e)
 		default:
-			resp, err = channel.Handle(h.wrappedSession(session), &e)
+			resp, err = channel.Handle(session, &e)
 		}
 	} else {
 		// Giant switch might be nicer
@@ -116,17 +132,20 @@ func (h *Hub) onMessage(session *melody.Session, data []byte) error {
 	}
 
 	if err != nil {
-		reply.Status = StatusError
-		reply.Payload = err
+		// TODO upgrade to logging
 		fmt.Printf("Failed to handle message: %+v\n", err)
-	} else {
-		reply.Status = StatusOK
-		reply.Payload = resp
 	}
+
+	reply.SetPayload(resp, err)
 
 	if err := writeJSON(session, reply); err != nil {
 		return errors.Wrap(err, "writing JSON")
 	}
 
+	return nil
+}
+
+func (h *Hub) onLeave(session *melody.Session) error {
+	// TODO
 	return nil
 }
