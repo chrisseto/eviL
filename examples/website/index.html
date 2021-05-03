@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Evil View</title>
+	<script type="text/javascript" src="/static/phoenix.js"></script>
+	<script type="text/javascript" src="/static/phoenix_live_view.js"></script>
+  </head>
+  <body>
+    %s
+	<script>
+    const { Socket } = Phoenix;
+    const { LiveSocket } = phoenix_live_view;
+		let liveSocket = new LiveSocket("/live", Socket, {});
+		liveSocket.connect()
+	</script>
+  </body>
+</html>
